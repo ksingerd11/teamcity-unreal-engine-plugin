@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+## 11.11.0 - 2026-05-04
+
+### Added
+
+- Support for bootstrap steps in distributed builds
+
 ## 1.3.4 - 2025-08-14
 
 ### Fixed

@@ -38,6 +38,54 @@ In most cases, you won't need to modify them.
 
     **Default value:** PT5S (5 seconds)
 
+### BuildGraph Retries and Agent-side Logs
+
+BuildGraph retry and agent-side log forwarding settings are runner parameters. They default to disabled behavior,
+so existing BuildGraph steps continue to run as before until these controls are explicitly enabled.
+
+Retries can be enabled separately for the distributed setup step and generated BuildGraph node steps. Node retry rules
+use the `NODE_PATTERN=MAX_ATTEMPTS` format and support `*` wildcards, for example:
+
+```text
+Compile*=3
+Cook*=3
+Exact Node Name=2
+```
+
+Agent-side Unreal log fan-out can be configured to keep TeamCity-only behavior, write local files, send HTTP GELF
+messages to Graylog, or do both. Local files can optionally be published as build artifacts.
+
+Additional opt-in BuildGraph controls are available for large distributed builds:
+
+* Retry condition: retry on any non-zero exit code, or retry only when the recent Unreal log output matches one of
+  the configured regular expressions.
+* Retry summaries: write retry decisions to the TeamCity build log.
+* Unmatched retry rule warnings: after setup exports the graph, warn when a configured node retry rule did not match
+  any exported node.
+* Setup diagnostics: publish a small diagnostics artifact when distributed setup fails, including command arguments,
+  shared storage path, exported graph path, and recent Unreal log lines.
+* Trace generated builds: add TeamCity parameters to generated setup and node builds that identify the original build,
+  generated role, group, and node.
+* Timeouts: configure a setup timeout and node timeout rules with values such as `3600`, `90m`, `45s`, `2h`, or `PT1H`.
+  TeamCity's runner API does not expose a way to kill only the current BuildGraph attempt and continue inside the same
+  build, so a timeout interrupts the stuck TeamCity build.
+* Graylog test: the runner UI can send a small server-side GELF test event to validate the endpoint before agents use it.
+
+Bootstrap steps can also be copied into generated distributed BuildGraph builds. This is intended for agent-local setup,
+for example acquiring a Perforce login ticket or preparing a client-specific environment on every distributed agent.
+The default mode is disabled, which preserves the upstream behavior of requiring a single distributed BuildGraph step.
+
+Supported bootstrap modes:
+
+* `Disabled`: generated setup and node builds contain only the Unreal BuildGraph runner.
+* `All steps before BuildGraph`: every build step before the distributed BuildGraph step is copied into generated builds.
+* `Selected steps`: only newline-delimited step IDs or names from the selected bootstrap list are copied.
+
+Bootstrap steps must appear before the distributed BuildGraph step. When bootstrap support is enabled, all non-BuildGraph
+steps in the original configuration are treated as bootstrap steps; other original steps are not preserved in distributed
+builds. Copied bootstrap steps can be applied to setup and node builds, setup only, or node builds only. The generated
+steps copy the original step name, runner type, and runner parameters.
+
 ## Debugging and Logging
 
 When you need to debug the plugin, you'll need to create a dedicated logger in the corresponding TeamCity Log4j configuration files:

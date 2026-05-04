@@ -15,6 +15,11 @@ data class BuildGraphCommand(
     val target: BuildGraphTargetNode,
     val options: List<BuildGraphOption>,
     val mode: BuildGraphMode,
+    val retrySettings: BuildGraphRetrySettings = BuildGraphRetrySettings(),
+    val timeoutSettings: BuildGraphTimeoutSettings = BuildGraphTimeoutSettings(),
+    val loggingSettings: BuildGraphLoggingSettings = BuildGraphLoggingSettings(),
+    val diagnosticsSettings: BuildGraphDiagnosticsSettings = BuildGraphDiagnosticsSettings(),
+    val bootstrapSettings: BuildGraphBootstrapSettings = BuildGraphBootstrapSettings(),
     val extraArguments: List<String> = emptyList(),
 ) : UnrealCommand {
     companion object {
@@ -25,12 +30,24 @@ data class BuildGraphCommand(
                 { BuildGraphTargetNodeParameter.parseTargetNode(runnerParameters) },
                 { BuildGraphOptionsParameter.parseOptions(runnerParameters) },
                 { BuildGraphModeParameter.parse(runnerParameters) },
-            ) { path, target, options, modeSettings ->
+                { BuildGraphRetrySettingsParameter.parse(runnerParameters) },
+                { BuildGraphTimeoutSettingsParameter.parse(runnerParameters) },
+                {
+                    BuildGraphLoggingSettingsParameter.parse(runnerParameters) to
+                        BuildGraphBootstrapSettingsParameter.parse(runnerParameters)
+                },
+            ) { path, target, options, modeSettings, retrySettings, timeoutSettings, loggingAndBootstrapSettings ->
+                val (loggingSettings, bootstrapSettings) = loggingAndBootstrapSettings
                 BuildGraphCommand(
                     path,
                     target,
                     options,
                     modeSettings,
+                    retrySettings,
+                    timeoutSettings,
+                    loggingSettings,
+                    BuildGraphDiagnosticsSettingsParameter.parse(runnerParameters),
+                    bootstrapSettings,
                     AdditionalArgumentsParameter.parse(runnerParameters),
                 )
             }

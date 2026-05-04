@@ -2,6 +2,7 @@
 import arrow.core.raise.either
 import com.jetbrains.teamcity.plugins.unrealengine.agent.buildgraph.DistributedBuildSettings
 import com.jetbrains.teamcity.plugins.unrealengine.agent.buildgraph.DistributedBuildSettingsCreator
+import com.jetbrains.teamcity.plugins.unrealengine.common.buildgraph.BuildGraphExecutionSettings
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.shouldNotBe
 import io.mockk.clearAllMocks
@@ -43,6 +44,7 @@ class DistributedBuildSettingsCreatorTests {
                         "foo",
                         "/tmp/foo",
                         "1",
+                        BuildGraphExecutionSettings(),
                     ),
             ),
             TestCase(
@@ -60,6 +62,7 @@ class DistributedBuildSettingsCreatorTests {
                     DistributedBuildSettings.RegularBuildSettings(
                         "/tmp/foo",
                         "1",
+                        BuildGraphExecutionSettings(),
                     ),
             ),
         )

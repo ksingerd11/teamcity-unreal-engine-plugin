@@ -30,6 +30,10 @@ fun BuildPromotion.hasSingleDistributedBuildGraphStep() = activeRunners().single
 
 fun BuildPromotion.activeRunners(): Collection<SBuildRunnerDescriptor> = buildSettings.buildRunners
 
+fun BuildPromotion.distributedBuildGraphRunners(): List<SBuildRunnerDescriptor> = activeRunners().filter { it.isDistributedBuildGraph() }
+
+fun BuildPromotion.distributedBuildGraphRunnerOrNull(): SBuildRunnerDescriptor? = distributedBuildGraphRunners().singleOrNull()
+
 fun BuildPromotion.generateIdForVirtualBuild(name: String) = "${id}_ue_plugin_generated_$name"
 
 fun BuildPromotionEx.markAsGeneratedBy(another: BuildPromotionEx) =

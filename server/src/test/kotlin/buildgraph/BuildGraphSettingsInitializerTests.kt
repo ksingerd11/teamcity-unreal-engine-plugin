@@ -10,7 +10,7 @@ import com.jetbrains.teamcity.plugins.unrealengine.server.buildgraph.Badge
 import com.jetbrains.teamcity.plugins.unrealengine.server.buildgraph.BadgePostingConfig
 import com.jetbrains.teamcity.plugins.unrealengine.server.buildgraph.BuildGraphSettingsInitializer
 import com.jetbrains.teamcity.plugins.unrealengine.server.buildgraph.addBuildGraphBuildSettings
-import com.jetbrains.teamcity.plugins.unrealengine.server.extensions.activeRunners
+import com.jetbrains.teamcity.plugins.unrealengine.server.extensions.distributedBuildGraphRunnerOrNull
 import io.kotest.matchers.shouldBe
 import io.mockk.Runs
 import io.mockk.every
@@ -27,7 +27,7 @@ class BuildGraphSettingsInitializerTests {
     private val initializer = BuildGraphSettingsInitializer()
 
     init {
-        mockkStatic(BuildPromotion::activeRunners)
+        mockkStatic(BuildPromotion::distributedBuildGraphRunnerOrNull)
         mockkStatic(SBuild::addBuildGraphBuildSettings)
     }
 
@@ -60,7 +60,7 @@ class BuildGraphSettingsInitializerTests {
                 every { addBuildGraphBuildSettings(any()) } just Runs
                 every { buildPromotion } returns
                     mockk<BuildPromotion> {
-                        every { activeRunners() } returns listOf(runnerWithMetadata)
+                        every { distributedBuildGraphRunnerOrNull() } returns runnerWithMetadata
                     }
             }
 
@@ -77,7 +77,7 @@ class BuildGraphSettingsInitializerTests {
                 every { addBuildGraphBuildSettings(any()) } just Runs
                 every { buildPromotion } returns
                     mockk<BuildPromotion> {
-                        every { activeRunners() } returns listOf(runnerWithoutMetadata)
+                        every { distributedBuildGraphRunnerOrNull() } returns runnerWithoutMetadata
                     }
             }
 
@@ -106,19 +106,15 @@ class BuildGraphSettingsInitializerTests {
             mockk<SBuild> {
                 every { buildPromotion } returns
                     mockk<BuildPromotion> {
-                        every { activeRunners() } returns emptyList()
+                        every { distributedBuildGraphRunnerOrNull() } returns null
                     }
             }
 
-        val buildWithMultipleRunners =
+        val buildWithMultipleBuildGraphRunners =
             mockk<SBuild> {
                 every { buildPromotion } returns
                     mockk<BuildPromotion> {
-                        every { activeRunners() } returns
-                            listOf(
-                                mockk<SBuildRunnerDescriptor>(),
-                                mockk<SBuildRunnerDescriptor>(),
-                            )
+                        every { distributedBuildGraphRunnerOrNull() } returns null
                     }
             }
 
@@ -127,13 +123,13 @@ class BuildGraphSettingsInitializerTests {
                 build = buildWithNoRunners,
                 badges = badges,
                 expectedConfig = null,
-                expectedError = GenericError("Unable to get runner parameters (there should be exactly one active UnrealEngine runner)"),
+                expectedError = GenericError("Unable to get runner parameters (there should be exactly one distributed BuildGraph runner)"),
             ),
             TestCase(
-                build = buildWithMultipleRunners,
+                build = buildWithMultipleBuildGraphRunners,
                 badges = badges,
                 expectedConfig = null,
-                expectedError = GenericError("Unable to get runner parameters (there should be exactly one active UnrealEngine runner)"),
+                expectedError = GenericError("Unable to get runner parameters (there should be exactly one distributed BuildGraph runner)"),
             ),
         )
     }

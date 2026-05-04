@@ -4,6 +4,7 @@ import arrow.core.raise.Raise
 import com.jetbrains.teamcity.plugins.framework.common.ensureNotNull
 import com.jetbrains.teamcity.plugins.framework.common.raise
 import com.jetbrains.teamcity.plugins.unrealengine.common.UnrealPluginLoggers
+import com.jetbrains.teamcity.plugins.unrealengine.common.buildgraph.BuildGraphExecutionSettings
 import com.jetbrains.teamcity.plugins.unrealengine.common.buildgraph.BuildGraphRunnerInternalSettings
 import jetbrains.buildServer.agent.BuildAgentConfiguration
 
@@ -12,11 +13,13 @@ sealed interface DistributedBuildSettings {
         val exportedGraphPath: String,
         val networkShare: String,
         val compositeBuildId: String,
+        val executionSettings: BuildGraphExecutionSettings,
     ) : DistributedBuildSettings
 
     data class RegularBuildSettings(
         val networkShare: String,
         val compositeBuildId: String,
+        val executionSettings: BuildGraphExecutionSettings,
     ) : DistributedBuildSettings
 }
 
@@ -57,12 +60,14 @@ class DistributedBuildSettingsCreator(
                     runnerInternalSettings.exportedGraphPath,
                     sharedStorageDir,
                     runnerInternalSettings.compositeBuildId,
+                    runnerInternalSettings.executionSettings,
                 )
             }
             is BuildGraphRunnerInternalSettings.RegularBuildSettings -> {
                 DistributedBuildSettings.RegularBuildSettings(
                     sharedStorageDir,
                     runnerInternalSettings.compositeBuildId,
+                    runnerInternalSettings.executionSettings,
                 )
             }
         }

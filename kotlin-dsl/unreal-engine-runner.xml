@@ -254,6 +254,121 @@
                     </option>
 
                 </param>
+
+                <param name="build-graph-retries-enabled" dslName="retries" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Enables retry controls for distributed BuildGraph setup and generated node steps.
+                    </description>
+                </param>
+                <param name="build-graph-setup-max-attempts" dslName="setupMaxAttempts" type="string">
+                    <description>
+                        The maximum number of attempts for the distributed BuildGraph setup step.
+                    </description>
+                </param>
+                <param name="build-graph-retry-delay-seconds" dslName="retryDelaySeconds" type="string">
+                    <description>
+                        The delay between retry attempts.
+                    </description>
+                </param>
+                <param name="build-graph-node-retry-rules" dslName="nodeRetryRules" type="string">
+                    <description>
+                        Newline-delimited retry rules in the NODE_PATTERN=MAX_ATTEMPTS format.
+                        Wildcards are supported, for example Compile*=3 or Cook*=3. The first matching rule wins.
+                    </description>
+                </param>
+                <param name="build-graph-retry-condition" dslName="retryCondition" type="BuildGraphRetryCondition">
+                    <description>
+                        Controls whether failed attempts are retried for any non-zero exit code or only when the log matches
+                        one of the retry failure patterns.
+                    </description>
+                </param>
+                <param name="build-graph-retry-failure-patterns" dslName="retryFailurePatterns" type="string">
+                    <description>
+                        Newline-delimited regular expressions matched against Unreal log messages when retry condition is
+                        "Only when log matches".
+                    </description>
+                </param>
+                <param name="build-graph-log-retry-summaries" dslName="logRetrySummaries" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Logs retry decisions and attempt summaries to the TeamCity build log.
+                    </description>
+                </param>
+                <param name="build-graph-warn-unmatched-retry-rules" dslName="warnUnmatchedRetryRules" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Logs a setup warning when retry rules do not match any exported BuildGraph nodes.
+                    </description>
+                </param>
+                <param name="build-graph-setup-timeout" dslName="setupTimeout" type="string">
+                    <description>
+                        Optional timeout for the distributed BuildGraph setup step. Use 0 to disable, or values like 3600, 90m, 45s, 2h, or PT1H.
+                    </description>
+                </param>
+                <param name="build-graph-node-timeout-rules" dslName="nodeTimeoutRules" type="string">
+                    <description>
+                        Newline-delimited timeout rules in the NODE_PATTERN=TIMEOUT format. Wildcards are supported.
+                    </description>
+                </param>
+                <param name="build-graph-publish-setup-diagnostics" dslName="publishSetupDiagnostics" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Publishes setup diagnostics when the distributed BuildGraph setup step fails.
+                    </description>
+                </param>
+                <param name="build-graph-trace-generated-builds" dslName="traceGeneratedBuilds" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Adds BuildGraph traceability parameters to generated setup and node builds.
+                    </description>
+                </param>
+                <param name="build-graph-bootstrap-mode" dslName="bootstrapMode" type="BuildGraphBootstrapMode">
+                    <description>
+                        Controls whether generated distributed setup and node builds should include bootstrap build steps from this build configuration.
+                    </description>
+                </param>
+                <param name="build-graph-bootstrap-step-refs" dslName="bootstrapStepRefs" type="string">
+                    <description>
+                        Newline-delimited build step IDs or names to copy into generated distributed builds.
+                    </description>
+                </param>
+                <param name="build-graph-bootstrap-apply-to" dslName="bootstrapApplyTo" type="BuildGraphBootstrapApplyTo">
+                    <description>
+                        Controls which generated distributed builds receive copied bootstrap steps.
+                    </description>
+                </param>
+
+                <param name="build-graph-log-sink" dslName="logSink" type="BuildGraphLogSink">
+                    <description>
+                        Controls optional agent-side Unreal log fan-out.
+                    </description>
+                </param>
+                <param name="build-graph-log-directory" dslName="logDirectory" type="string">
+                    <description>
+                        The directory for local Unreal log files. Relative paths are resolved from the checkout directory.
+                    </description>
+                </param>
+                <param name="build-graph-publish-log-artifacts" dslName="publishLogArtifacts" type="boolean" trueValue="true" falseValue="false">
+                    <description>
+                        Publishes local Unreal log files as build artifacts.
+                    </description>
+                </param>
+                <param name="build-graph-graylog-endpoint" dslName="graylogEndpoint" type="string">
+                    <description>
+                        The HTTP GELF endpoint used for optional agent-side Graylog forwarding.
+                    </description>
+                </param>
+                <param name="build-graph-graylog-source" dslName="graylogSource" type="string">
+                    <description>
+                        Optional Graylog source value. When empty, the agent host name is used.
+                    </description>
+                </param>
+                <param name="build-graph-graylog-timeout-seconds" dslName="graylogTimeoutSeconds" type="string">
+                    <description>
+                        The timeout for each Graylog HTTP request.
+                    </description>
+                </param>
+                <param name="build-graph-graylog-extra-fields" dslName="graylogExtraFields" type="string">
+                    <description>
+                        Newline-delimited extra Graylog fields in the FIELD_NAME=FIELD_VALUE format.
+                    </description>
+                </param>
             </option>
 
             <option name="runAutomation" value="RunAutomation">
@@ -520,6 +635,26 @@
         <enum name="BuildGraphMode">
             <option name="SingleMachine" value="SingleMachine"/>
             <option name="Distributed" value="Distributed"/>
+        </enum>
+        <enum name="BuildGraphLogSink">
+            <option name="TeamCityOnly" value="TeamCityOnly"/>
+            <option name="LocalFile" value="LocalFile"/>
+            <option name="Graylog" value="Graylog"/>
+            <option name="LocalFileAndGraylog" value="LocalFileAndGraylog"/>
+        </enum>
+        <enum name="BuildGraphRetryCondition">
+            <option name="AnyFailure" value="AnyFailure"/>
+            <option name="MatchingLog" value="MatchingLog"/>
+        </enum>
+        <enum name="BuildGraphBootstrapMode">
+            <option name="Disabled" value="Disabled"/>
+            <option name="AllBeforeBuildGraph" value="AllBeforeBuildGraph"/>
+            <option name="Selected" value="Selected"/>
+        </enum>
+        <enum name="BuildGraphBootstrapApplyTo">
+            <option name="SetupAndNodes" value="SetupAndNodes"/>
+            <option name="SetupOnly" value="SetupOnly"/>
+            <option name="NodesOnly" value="NodesOnly"/>
         </enum>
         <enum name="RunFilterType">
             <option name="Engine" value="Engine"/>

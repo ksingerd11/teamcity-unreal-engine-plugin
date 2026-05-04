@@ -59,7 +59,7 @@ class BuildGraphExecCommandTests {
                         BuildGraphTargetNode("Build Linux"),
                         listOf(BuildGraphOption("Foo", "Bar")),
                         BuildGraphMode.SingleMachine,
-                        listOf("-P4", "-Submit"),
+                        extraArguments = listOf("-P4", "-Submit"),
                     ),
                 shouldContainItems =
                     listOf(
@@ -138,7 +138,7 @@ class BuildGraphExecCommandTests {
                 BuildGraphTargetNode(""),
                 emptyList(),
                 BuildGraphMode.SingleMachine,
-                emptyList(),
+                extraArguments = emptyList(),
             )
 
         // act

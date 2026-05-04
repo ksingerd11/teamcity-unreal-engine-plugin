@@ -67,3 +67,28 @@ inline fun <Error, A, B, C, D, E> zipOrAccumulate(
     @BuilderInference action4: context(RaiseAccumulate<Error>) () -> D,
     block: (A, B, C, D) -> E
 ): E = raise.zipOrAccumulateExt(action1, action2, action3, action4, block)
+
+context(raise: Raise<NonEmptyList<Error>>)
+@RaiseDSL
+inline fun <Error, A, B, C, D, E, F, G> zipOrAccumulate(
+    @BuilderInference action1: context(RaiseAccumulate<Error>) () -> A,
+    @BuilderInference action2: context(RaiseAccumulate<Error>) () -> B,
+    @BuilderInference action3: context(RaiseAccumulate<Error>) () -> C,
+    @BuilderInference action4: context(RaiseAccumulate<Error>) () -> D,
+    @BuilderInference action5: context(RaiseAccumulate<Error>) () -> E,
+    @BuilderInference action6: context(RaiseAccumulate<Error>) () -> F,
+    block: (A, B, C, D, E, F) -> G
+): G = raise.zipOrAccumulateExt(action1, action2, action3, action4, action5, action6, block)
+
+context(raise: Raise<NonEmptyList<Error>>)
+@RaiseDSL
+inline fun <Error, A, B, C, D, E, F, G, H> zipOrAccumulate(
+    @BuilderInference action1: context(RaiseAccumulate<Error>) () -> A,
+    @BuilderInference action2: context(RaiseAccumulate<Error>) () -> B,
+    @BuilderInference action3: context(RaiseAccumulate<Error>) () -> C,
+    @BuilderInference action4: context(RaiseAccumulate<Error>) () -> D,
+    @BuilderInference action5: context(RaiseAccumulate<Error>) () -> E,
+    @BuilderInference action6: context(RaiseAccumulate<Error>) () -> F,
+    @BuilderInference action7: context(RaiseAccumulate<Error>) () -> G,
+    block: (A, B, C, D, E, F, G) -> H
+): H = raise.zipOrAccumulateExt(action1, action2, action3, action4, action5, action6, action7, block)

@@ -46,6 +46,8 @@ sealed interface BuildGraphRunnerInternalSettings {
         val exportedGraphPath: String,
         @SerialName("composite-build-id")
         val compositeBuildId: String,
+        @SerialName("execution-settings")
+        val executionSettings: BuildGraphExecutionSettings = BuildGraphExecutionSettings(),
     ) : BuildGraphRunnerInternalSettings
 
     @Serializable
@@ -53,12 +55,29 @@ sealed interface BuildGraphRunnerInternalSettings {
     data class RegularBuildSettings(
         @SerialName("composite-build-id")
         val compositeBuildId: String,
+        @SerialName("execution-settings")
+        val executionSettings: BuildGraphExecutionSettings = BuildGraphExecutionSettings(),
     ) : BuildGraphRunnerInternalSettings
 }
 
 fun BuildGraphRunnerInternalSettings.toMap() =
     properties
         .encodeToStringMap(this)
+        .filterDefaultExecutionSettings(this)
         .mapKeys {
             "${PROPERTY_KEY_PREFIX}${it.key}"
         }
+
+private fun Map<String, String>.filterDefaultExecutionSettings(settings: BuildGraphRunnerInternalSettings): Map<String, String> {
+    val executionSettings =
+        when (settings) {
+            is BuildGraphRunnerInternalSettings.RegularBuildSettings -> settings.executionSettings
+            is BuildGraphRunnerInternalSettings.SetupBuildSettings -> settings.executionSettings
+        }
+
+    return if (executionSettings == BuildGraphExecutionSettings()) {
+        filterKeys { !it.startsWith("execution-settings.") }
+    } else {
+        this
+    }
+}

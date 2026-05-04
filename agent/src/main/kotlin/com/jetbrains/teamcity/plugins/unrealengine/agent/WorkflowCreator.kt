@@ -9,19 +9,22 @@ import jetbrains.buildServer.agent.problems.ExitCodeProblemBuilder
 data class Workflow(
     val commands: Collection<UnrealEngineCommandExecution>,
     val onCompletion: context(UnrealBuildContext)
-    (List<Int>) -> BuildFinishedStatus = { workflowCompleted(it) },
+    (List<CompletedCommand>) -> BuildFinishedStatus = { workflowCompleted(it) },
 ) {
     private val commandsQueue = ArrayDeque(commands)
+    private val completedRetryGroups = mutableSetOf<String>()
 
     companion object {
         context(context: UnrealBuildContext)
-        private fun workflowCompleted(commandExitCodes: List<Int>): BuildFinishedStatus =
-            if (commandExitCodes.all { it == 0 } || !context.build.failBuildOnExitCode) {
+        private fun workflowCompleted(completedCommands: List<CompletedCommand>): BuildFinishedStatus {
+            val effectiveExitCodes = completedCommands.effectiveExitCodes()
+            return if (effectiveExitCodes.all { it == 0 } || !context.build.failBuildOnExitCode) {
                 BuildFinishedStatus.FINISHED_SUCCESS
             } else {
-                commandExitCodes.filter { it != 0 }.forEach { reportBuildProblem(it) }
+                effectiveExitCodes.filter { it != 0 }.forEach { reportBuildProblem(it) }
                 BuildFinishedStatus.FINISHED_WITH_PROBLEMS
             }
+        }
 
         context(context: UnrealBuildContext)
         private fun reportBuildProblem(nonZeroExitCode: Int) {
@@ -34,10 +37,33 @@ data class Workflow(
                     .build(),
             )
         }
+
+        private fun List<CompletedCommand>.effectiveExitCodes(): List<Int> =
+            filter { it.command.retryGroupId == null }.map { it.exitCode } +
+                filter { it.command.retryGroupId != null }
+                    .groupBy { it.command.retryGroupId }
+                    .values
+                    .map { it.last().exitCode }
     }
 
-    fun next() = commandsQueue.removeFirstOrNull()
+    fun next(completedCommands: List<CompletedCommand>): UnrealEngineCommandExecution? {
+        val previousCommand = completedCommands.lastOrNull()
+        if (previousCommand != null && !previousCommand.command.shouldRetry(previousCommand.exitCode)) {
+            previousCommand.command.retryGroupId?.let { completedRetryGroups.add(it) }
+        }
+
+        while (commandsQueue.firstOrNull()?.retryGroupId in completedRetryGroups) {
+            commandsQueue.removeFirst()
+        }
+
+        return commandsQueue.removeFirstOrNull()
+    }
 }
+
+data class CompletedCommand(
+    val command: UnrealEngineCommandExecution,
+    val exitCode: Int,
+)
 
 interface WorkflowCreator {
     context(_: Raise<GenericError>, context: UnrealBuildContext)

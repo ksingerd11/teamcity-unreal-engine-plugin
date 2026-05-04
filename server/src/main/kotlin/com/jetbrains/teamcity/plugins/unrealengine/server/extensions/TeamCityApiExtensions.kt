@@ -34,3 +34,6 @@ fun BuildTypeSettings.addUnrealRunner(
     name: String,
     parameters: Map<String, String>,
 ) = addBuildRunner(name, UnrealEngineRunner.RUN_TYPE, parameters)
+
+fun BuildTypeSettings.addBuildRunnerCopyFrom(runner: SBuildRunnerDescriptor): SBuildRunnerDescriptor =
+    addBuildRunner(runner.name, runner.type, runner.parameters)

@@ -20,7 +20,7 @@ class UnrealEngineBuildSession(
     private lateinit var workflow: Workflow
 
     private val executingCommands = ArrayDeque<UnrealEngineCommandExecution>(1)
-    private val exitCodes = mutableListOf<Int>()
+    private val completedCommands = mutableListOf<CompletedCommand>()
 
     override fun sessionStarted() =
         runBlocking {
@@ -39,7 +39,9 @@ class UnrealEngineBuildSession(
     override fun getNextCommand(): CommandExecution? {
         processPreviousCommandCompletion()
 
-        val nextCommand = workflow.next()
+        val previousCommand = completedCommands.lastOrNull()
+        val nextCommand = workflow.next(completedCommands)
+        logRetrySummary(previousCommand, nextCommand)
 
         if (nextCommand != null) {
             executingCommands.addLast(nextCommand)
@@ -51,13 +53,13 @@ class UnrealEngineBuildSession(
     override fun sessionFinished(): BuildFinishedStatus {
         processPreviousCommandCompletion()
 
-        return workflow.onCompletion(unrealBuildContext, exitCodes)
+        return workflow.onCompletion(unrealBuildContext, completedCommands)
     }
 
     private fun processPreviousCommandCompletion() {
         executingCommands.removeLastOrNull()?.let {
             when (val state = it.state) {
-                is UnrealEngineCommandState.Finished -> exitCodes.add(state.exitCode)
+                is UnrealEngineCommandState.Finished -> completedCommands.add(CompletedCommand(it, state.exitCode))
                 else -> {
                     logger.warn(
                         "Next session command has been requested, but the previous one hasn't been completed yet." +
@@ -65,6 +67,32 @@ class UnrealEngineBuildSession(
                     )
                 }
             }
+        }
+    }
+
+    private fun logRetrySummary(
+        previousCommand: CompletedCommand?,
+        nextCommand: UnrealEngineCommandExecution?,
+    ) {
+        val command = previousCommand?.command ?: return
+        if (!command.logRetrySummaries || command.retryGroupId == null) {
+            return
+        }
+
+        val sameRetryGroup = nextCommand?.retryGroupId == command.retryGroupId
+        when {
+            previousCommand.exitCode == 0 && command.attempt < command.maxAttempts ->
+                unrealBuildContext.build.buildLogger.message(
+                    "BuildGraph \"${command.retryGroupId}\" succeeded on attempt ${command.attempt}/${command.maxAttempts}; skipping remaining attempts.",
+                )
+            previousCommand.exitCode != 0 && sameRetryGroup ->
+                unrealBuildContext.build.buildLogger.warning(
+                    "BuildGraph \"${command.retryGroupId}\" failed on attempt ${command.attempt}/${command.maxAttempts}; retrying.",
+                )
+            previousCommand.exitCode != 0 && command.attempt < command.maxAttempts ->
+                unrealBuildContext.build.buildLogger.warning(
+                    "BuildGraph \"${command.retryGroupId}\" failed on attempt ${command.attempt}/${command.maxAttempts}; retry condition was not met.",
+                )
         }
     }
 }

@@ -1,9 +1,11 @@
 
+import com.jetbrains.teamcity.plugins.unrealengine.agent.RetrySignal
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.LogEventHandler
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.LogLevel
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealEngineProcessListener
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealLogEvent
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealLogEventParser
+import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealLogSink
 import io.mockk.clearAllMocks
 import io.mockk.every
 import io.mockk.mockk
@@ -86,10 +88,49 @@ class UnrealEngineProcessListenerTests {
         }
     }
 
-    private fun createListener(vararg handlers: LogEventHandler) =
-        UnrealEngineProcessListener(
-            buildLogger,
-            logEventParser,
-            handlers.asList(),
-        )
+    @Test
+    fun `flushes buffered build problems when suppressed attempt succeeds`() {
+        // arrange
+        val errorEvent = logEvent.copy(level = LogLevel.Error)
+        every { logEventParser.parse(any()) } returns errorEvent
+        val listener = createListener(reportBuildProblems = false)
+
+        // act
+        listener.onStandardOutput(errorEvent.message)
+        listener.processFinished(0)
+
+        // assert
+        verify { buildLogger.logBuildProblem(any()) }
+    }
+
+    @Test
+    fun `marks retry signal when log output matches retry failure pattern`() {
+        // arrange
+        every { logEventParser.parse(any()) } answers { logEvent.copy(message = firstArg()) }
+        val retrySignal = RetrySignal()
+        val listener = createListener(retryFailurePatterns = listOf(Regex("lost connection")), retrySignal = retrySignal)
+
+        // act
+        listener.onStandardOutput("lost connection to worker")
+
+        // assert
+        kotlin.test.assertTrue(retrySignal.matched)
+    }
+
+    private fun createListener(
+        vararg handlers: LogEventHandler,
+        reportBuildProblems: Boolean = true,
+        retryFailurePatterns: List<Regex> = emptyList(),
+        retrySignal: RetrySignal = RetrySignal(),
+    ) = UnrealEngineProcessListener(
+        buildLogger,
+        logEventParser,
+        handlers.asList(),
+        reportBuildProblems = reportBuildProblems,
+        logSink = mockk<UnrealLogSink>(relaxed = true),
+        retryFailurePatterns = retryFailurePatterns,
+        retrySignal = retrySignal,
+        onFailedProcessDiagnostics = { _, _ -> },
+        flushBuildProblemsOnFailedAttemptWithoutRetrySignal = false,
+    )
 }

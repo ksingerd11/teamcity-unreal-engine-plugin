@@ -13,6 +13,7 @@
     <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.RunTypeRegistration"/>
     <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.UnrealEngineRunnerPropertiesValidator"/>
     <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.UnrealEngineRunnerParametersProvider"/>
+    <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.BuildGraphGraylogTestController"/>
 
     <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.ui.UnrealRunnerComponent"/>
     <bean class="com.jetbrains.teamcity.plugins.unrealengine.server.runner.ui.UnrealRunnerComponent"/>

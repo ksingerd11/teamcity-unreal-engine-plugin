@@ -7,6 +7,7 @@ import com.jetbrains.teamcity.plugins.unrealengine.agent.UnrealEngineCommandExec
 import com.jetbrains.teamcity.plugins.unrealengine.agent.UnrealEngineProgramCommandLine
 import com.jetbrains.teamcity.plugins.unrealengine.agent.UnrealToolRegistry
 import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealEngineProcessListenerFactory
+import com.jetbrains.teamcity.plugins.unrealengine.agent.build.log.UnrealProcessListenerSettings
 import com.jetbrains.teamcity.plugins.unrealengine.agent.reporting.AutomationTestLogEventHandler
 import com.jetbrains.teamcity.plugins.unrealengine.common.GenericError
 import com.jetbrains.teamcity.plugins.unrealengine.common.buildgraph.BuildGraphCommand
@@ -27,7 +28,13 @@ class SingleMachineExecutor(
                     toolRegistry.automationTool(context.runnerParameters).executablePath,
                     command.toArguments(),
                 ),
-                processListenerFactory.create(AutomationTestLogEventHandler(context)),
+                processListenerFactory.create(
+                    UnrealProcessListenerSettings(
+                        loggingSettings = command.loggingSettings,
+                        executionName = command.target.value,
+                    ),
+                    AutomationTestLogEventHandler(context),
+                ),
             ),
         )
 }
