@@ -64,19 +64,35 @@ teamcity {
 abstract class BuildFrontendTask
     @Inject constructor(private val operations: ExecOperations)
 : DefaultTask() {
+    @get:InputDirectory
+    abstract val frontendDir: DirectoryProperty
+
+    @get:OutputDirectory
+    abstract val reactOutputDir: DirectoryProperty
+
     @TaskAction
     fun doTaskAction() {
         operations.exec {
-            workingDir(project.file("frontend"))
+            workingDir(frontendDir.get().asFile)
             commandLine("docker", "build", "-f", "./build.Dockerfile", "-t", "unreal-runner-frontend-build", ".")
         }
         operations.exec { commandLine("docker", "run", "--name", "unreal-runner-frontend-build", "unreal-runner-frontend-build") }
-        operations.exec { commandLine("docker", "cp", "unreal-runner-frontend-build:/app/dist/.", "./src/main/resources/buildServerResources/react") }
+        operations.exec {
+            commandLine(
+                "docker",
+                "cp",
+                "unreal-runner-frontend-build:/app/dist/.",
+                reactOutputDir.get().asFile.absolutePath
+            )
+        }
         operations.exec { commandLine("docker", "rm", "-v", "-f", "unreal-runner-frontend-build") }
     }
 }
 
-val buildFront = tasks.register<BuildFrontendTask>("buildFront")
+val buildFront = tasks.register<BuildFrontendTask>("buildFront") {
+    frontendDir.set(layout.projectDirectory.dir("frontend"))
+    reactOutputDir.set(layout.projectDirectory.dir("src/main/resources/buildServerResources/react"))
+}
 
 tasks.processResources {
     dependsOn(buildFront)
